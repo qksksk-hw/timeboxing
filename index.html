@@ -104,6 +104,13 @@ textarea{width:100%;min-height:84px;border:1px solid var(--line);border-radius:1
 .rvsum{display:flex;justify-content:space-between;gap:8px;font-size:12px;color:var(--sub);margin-bottom:4px}
 .rvsum b{color:var(--accent);font-size:15px;margin-left:4px}
 .card.over{outline:2px solid var(--accent);outline-offset:-2px}
+.gscroll{max-height:min(58vh,400px);overflow-y:auto;position:relative;border-radius:10px}
+.grid>:nth-child(-n+4){position:sticky;top:0;background:var(--card);z-index:2}
+.rng{display:flex;align-items:center;gap:8px;margin:8px 0}
+.rng .rl{flex:1;font-size:13px;color:var(--sub)}
+.rng .rl b{color:var(--ink);margin-left:4px}
+.rng button{width:40px;height:32px;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:8px;font-size:16px;padding:0}
+.rmsg{font-size:12px;color:var(--accent);min-height:16px}
 .cell{-webkit-touch-callout:none}
 .p1{--pc:#e5534b}.p2{--pc:#e8b630}.p3{--pc:#6f93e6}
 .pri{width:26px;height:26px;border:0;padding:0;flex:none;background:transparent;display:inline-flex;align-items:center;justify-content:center}
@@ -164,10 +171,15 @@ h2.fold::after{content:'▾';font-size:13px}
 
 <div class="card">
   <h2>PLAN / DONE</h2>
+  <div class="rng"><span class="rl">시작 <b id="rsLbl"></b></span><button id="rsMinus" aria-label="첫 칸 삭제">－</button><button id="rsPlus" aria-label="앞에 30분 칸 추가">＋</button></div>
+  <div class="gscroll" id="gscroll">
   <div class="grid" id="grid">
     <div></div><div class="head">PLAN (계획)</div><div></div><div class="head">DONE (실행)</div>
   </div>
-  <div class="tip">칸을 눌러 바로 입력하세요. 가운데 → 를 누르면 계획 그대로 실행에 복사돼요. PLAN 칸은 꾹 눌러 브레인덤프 카드로도 옮길 수 있어요.</div>
+  </div>
+  <div class="rng"><span class="rl">끝 <b id="reLbl"></b></span><button id="reMinus" aria-label="마지막 칸 삭제">－</button><button id="rePlus" aria-label="뒤에 30분 칸 추가">＋</button></div>
+  <div class="rmsg" id="rngMsg"></div>
+  <div class="tip">＋ 를 누르면 30분 칸이 늘고 － 를 누르면 줄어요. 칸을 눌러 입력하고, 가운데 → 를 누르면 계획 그대로 실행에 복사돼요. PLAN 칸은 꾹 눌러 브레인덤프 카드로도 옮길 수 있어요.</div>
 </div>
 </section>
 
@@ -205,7 +217,7 @@ h2.fold::after{content:'▾';font-size:13px}
   </div>
 </section>
 </div>
-<div class="tip">v1026c · PLAN→브레인덤프 이동</div>
+<div class="tip">v1026d · 시간표 스크롤 · 30분 칸 추가/삭제</div>
 </div>
 
 <script>
@@ -214,6 +226,12 @@ var $=function(id){return document.getElementById(id)};
 function fmt(d){return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2)}
 function today(){return fmt(new Date())}
 var cur=today();
+function defRange(day){var wd=new Date(day+'T00:00:00').getDay();return (wd===0||wd===6)?{s:360,e:1440}:{s:1140,e:1380}}
+function fitRange(d){
+  var lo=d.range.s,hi=d.range.e;
+  ['plan','done'].forEach(function(k){Object.keys(d[k]||{}).forEach(function(x){if(d[k][x]){var n=+x;if(n<lo)lo=n;if(n+STEP>hi)hi=n+STEP}})});
+  d.range={s:Math.max(0,Math.floor(lo/STEP)*STEP),e:Math.min(1440,hi)};
+}
 function blank(){return {big:[{t:'',c:false},{t:'',c:false},{t:'',c:false}],items:[],plan:{},done:{},rv:{mood:0,good:'',bad:'',learn:'',tomorrow:'',diary:''}}}
 function load(day){
   try{
@@ -225,10 +243,12 @@ function load(day){
       ['plan','done'].forEach(function(k){
         var o={};Object.keys(d[k]||{}).forEach(function(x){var n=+x;o[n<100?n*60:n]=d[k][x]});d[k]=o;
       });
+      if(!d.range)d.range={s:360,e:1440};
+      fitRange(d);
       return d;
     }
   }catch(e){}
-  return blank();
+  var b=blank();b.range=defRange(day);return b;
 }
 var data=load(cur);
 function save(){try{localStorage.setItem(KEY+cur,JSON.stringify(data))}catch(e){}stats()}
@@ -295,11 +315,11 @@ function renderItems(){
     box.appendChild(row);
   });
 }
-function renderGrid(){
-  var g=$('grid');
+function renderGrid(auto){
+  var g=$('grid'),sc=$('gscroll'),st=sc.scrollTop;
   while(g.children.length>4)g.removeChild(g.lastChild);
   var now=new Date(),nowM=now.getHours()*60+now.getMinutes(),isToday=cur===today();
-  for(var m=START;m<END;m+=STEP){
+  for(var m=data.range.s;m<data.range.e;m+=STEP){
     (function(m){
       var lab=document.createElement('div');
       lab.className='hr'+(m%60?' half':'')+(isToday&&nowM>=m&&nowM<m+STEP?' now':'');
@@ -327,10 +347,32 @@ function renderGrid(){
       g.appendChild(cells.plan);g.appendChild(btn);g.appendChild(cells.done);upd();
     })(m);
   }
+  if(auto){var nn=g.querySelector('.hr.now');sc.scrollTop=nn?Math.max(0,nn.offsetTop-44):0}else sc.scrollTop=st;
+  rngUpd();
 }
+function hasText(m){return !!(data.plan[m]||data.done[m])}
+function rngMsg(t){var el=$('rngMsg');el.textContent=t;clearTimeout(rngMsg.t);rngMsg.t=setTimeout(function(){el.textContent=''},2400)}
+function rngUpd(){$('rsLbl').textContent=hhmm(data.range.s);$('reLbl').textContent=hhmm(data.range.e)}
+function rngChange(w){
+  var r=data.range,sc=$('gscroll');
+  if(w==='s+'){if(r.s-STEP<0)return rngMsg('00:00보다 앞 시간은 없어요');r.s-=STEP}
+  else if(w==='e+'){if(r.e+STEP>1440)return rngMsg('24:00보다 뒤 시간은 없어요');r.e+=STEP}
+  else{
+    if(r.e-r.s<=STEP)return rngMsg('최소 한 칸은 필요해요');
+    var m=w==='s-'?r.s:r.e-STEP;
+    if(hasText(m))return rngMsg('내용이 있는 칸은 먼저 비워 주세요');
+    if(w==='s-')r.s+=STEP;else r.e-=STEP;
+  }
+  save();renderGrid();
+  if(w==='s+')sc.scrollTop=0;else if(w==='e+')sc.scrollTop=sc.scrollHeight;
+}
+$('rsPlus').onclick=function(){rngChange('s+')};
+$('rsMinus').onclick=function(){rngChange('s-')};
+$('rePlus').onclick=function(){rngChange('e+')};
+$('reMinus').onclick=function(){rngChange('e-')};
 function render(){
   $('date').value=cur;
-  renderBigs();renderItems();renderGrid();stats();renderSD();renderRoutine();renderReview();
+  renderBigs();renderItems();renderGrid(true);stats();renderSD();renderRoutine();renderReview();
 }
 
 /* 브레인 덤프 입력 */
@@ -356,7 +398,13 @@ function begin(row){
   drag={src:src,idx:+row.dataset.i,gh:gh,t:info.t,k:info.k};row.style.opacity='.4';
   if(navigator.vibrate)try{navigator.vibrate(15)}catch(e){}
   place(lx,ly);
-  scrollT=setInterval(function(){if(ly<90)window.scrollBy(0,-14);else if(ly>window.innerHeight-90)window.scrollBy(0,14);hit()},30);
+  scrollT=setInterval(function(){
+    var sc=$('gscroll'),r=sc.getBoundingClientRect(),inner=false;
+    if(lx>=r.left&&lx<=r.right&&ly>=r.top&&ly<=r.bottom){
+      if(ly<r.top+44){sc.scrollTop-=10;inner=true}else if(ly>r.bottom-44){sc.scrollTop+=10;inner=true}
+    }
+    if(!inner){if(ly<90)window.scrollBy(0,-14);else if(ly>window.innerHeight-90)window.scrollBy(0,14)}
+    hit()},30);
 }
 function place(x,y){if(!drag)return;drag.gh.style.left=x+'px';drag.gh.style.top=y+'px'}
 function hit(){
@@ -554,7 +602,7 @@ function editName(r,span){
 var FK='timebox:fold',FOLD={};
 try{FOLD=JSON.parse(localStorage.getItem(FK)||'{}')}catch(e){}
 [].forEach.call(document.querySelectorAll('#pane1 .card'),function(card){
-  var h=card.querySelector('h2');if(!h)return;
+  var h=card.querySelector('h2');if(!h||card.querySelector('#grid'))return;
   var id=h.textContent.trim();
   h.classList.add('fold');
   if(FOLD[id])card.classList.add('closed');
@@ -633,7 +681,7 @@ function buildPdfRoot(){
   h+='<div style="'+SUB+'">PLAN / DONE</div>';
   h+='<table style="width:100%;border-collapse:collapse;table-layout:fixed"><colgroup><col style="width:60px"><col><col></colgroup>';
   h+='<tr class="cut"><td style="'+TD+'height:26px"></td><td style="'+TD+'font-weight:700;text-align:center">PLAN</td><td style="'+TD+'font-weight:700;text-align:center">DONE</td></tr>';
-  for(var m=START;m<END;m+=STEP){
+  for(var m=data.range.s;m<data.range.e;m+=STEP){
     h+='<tr class="cut"><td style="'+TD+'height:26px;color:#777;font-size:12px">'+hhmm(m)+'</td>'
       +'<td style="'+TD+'background:#e9efe6;word-break:break-word">'+esc(data.plan[m])+'</td>'
       +'<td style="'+TD+'background:#fbeedd;word-break:break-word">'+esc(data.done[m])+'</td></tr>';
