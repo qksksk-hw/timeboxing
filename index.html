@@ -337,6 +337,15 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .rcard .ttl span{flex:1;font-size:15px;font-weight:700;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .rcard .ttl small{font-size:12px;color:var(--sub);font-variant-numeric:tabular-nums}
 .rcard .ttl em{font-style:normal;font-size:12px;font-weight:700;color:var(--ink);background:var(--page);padding:5px 10px;border-radius:999px;font-variant-numeric:tabular-nums}
+
+/* 오전/오후 접기 */
+.bdh{cursor:pointer;user-select:none;-webkit-user-select:none;padding:12px 0 8px;margin:6px 0 0}
+.bdh::after{content:'';margin-left:auto;margin-right:5px;width:8px;height:8px;border:solid var(--sub);border-width:0 2px 2px 0;transform:translateY(-2px) rotate(45deg);transition:transform .2s;align-self:center}
+.bdgrp.closed .bdh::after{transform:rotate(-45deg)}
+.bdgrp.closed>*:not(.bdh){display:none}
+.bdgrp.closed{background:var(--bg);border-radius:16px;padding:0 14px}
+.bdgrp.closed .bdh{padding:14px 0;margin:0}
+.bdgrp.over{outline-offset:0}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -428,7 +437,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
   </div>
 </section>
 </div>
-<div class="tip">v1102c · 오전/오후 · 루틴 실행률</div>
+<div class="tip">v1102d · 오전/오후 접기</div>
 </div>
 
 <script>
@@ -512,7 +521,8 @@ function bindEdit(row,s,key,getT,setT,after){
 function cyc(p){return {3:2,2:1,1:3}[p||3]}
 function orderP(a){var idx=a.map(function(_,i){return i}),key=function(i){return (a[i].c?10:0)+(a[i].p||3)};return idx.sort(function(x,y){return key(x)-key(y)||x-y})}
 function order(a){var u=[],c=[];a.forEach(function(x,i){(x.c?c:u).push(i)});return u.concat(c)}
-var CATS=[['work','오전'],['life','오후']],bdCat='work',subOpen=-1;
+var CATS=[['work','오전'],['life','오후']],bdCat='work',subOpen=-1,BDF={};
+try{BDF=JSON.parse(localStorage.getItem('timebox:bdfold')||'{}')}catch(e){}
 try{bdCat=localStorage.getItem('timebox:bdcat')==='life'?'life':'work'}catch(e){}
 function icat(it){return it&&it.cat==='life'?'life':'work'}
 function renderCatSel(){[].forEach.call($('catSel').children,function(b){b.className=b.dataset.c===bdCat?'on':''})}
@@ -525,6 +535,9 @@ function renderItems(){
     var cat=cg[0],idx=ord.filter(function(i){return icat(data.items[i])===cat});
     var g=mk('div','bdgrp');g.dataset.cat=cat;
     var h=mk('div','bdh',cg[1]);h.appendChild(mk('i','',String(idx.filter(function(i){return !data.items[i].c}).length)));
+    h.setAttribute('role','button');h.setAttribute('aria-expanded',BDF[cat]?'false':'true');
+    if(BDF[cat])g.classList.add('closed');
+    h.onclick=function(){BDF[cat]=!BDF[cat];g.classList.toggle('closed',!!BDF[cat]);h.setAttribute('aria-expanded',BDF[cat]?'false':'true');try{localStorage.setItem('timebox:bdfold',JSON.stringify(BDF))}catch(e){}};
     g.appendChild(h);
     if(!idx.length)g.appendChild(mk('div','empty','비어 있어요'));
     idx.forEach(function(i,n){
