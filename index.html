@@ -268,7 +268,7 @@ h2.fold::after{transform:translateY(-2px) rotate(45deg)}
 /* 입력 */
 .add{gap:8px;margin-bottom:6px}
 .add input{background:var(--bg);border-radius:14px;padding:14px 16px;font-size:15px}
-.add button{background:var(--pri);color:var(--onpri);border-radius:14px;padding:0 20px;font-weight:600}
+.add button{background:var(--pri);color:var(--onpri);border-radius:14px;width:50px;padding:0;flex:none;display:grid;place-items:center}
 .cats{background:var(--bg);border-radius:14px;padding:4px;gap:4px;margin-bottom:10px}
 .cats button{background:transparent;border-radius:11px;padding:10px 0;font-weight:600}
 .cats button.on{background:var(--pri);color:var(--onpri)}
@@ -329,6 +329,14 @@ h2.fold::after{transform:translateY(-2px) rotate(45deg)}
 .wrap>.tip{text-align:center;margin-top:28px;opacity:.7}
 button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .add input:focus-visible{outline-offset:0}
+
+/* 루틴 실행률 */
+.rpc{font-style:normal;flex:none;font-size:12px;font-weight:600;color:var(--sub);font-variant-numeric:tabular-nums;margin-right:2px}
+#rlist .sditem.done .rpc{color:var(--on);opacity:.8}
+.rcard .ttl{display:flex;align-items:center;gap:8px;text-align:left;margin-bottom:14px}
+.rcard .ttl span{flex:1;font-size:15px;font-weight:700;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rcard .ttl small{font-size:12px;color:var(--sub);font-variant-numeric:tabular-nums}
+.rcard .ttl em{font-style:normal;font-size:12px;font-weight:700;color:var(--ink);background:var(--page);padding:5px 10px;border-radius:999px;font-variant-numeric:tabular-nums}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -357,17 +365,17 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 
 <div class="card">
   <h2>언젠가 할일</h2>
-  <div class="add"><input type="text" id="sdNew" placeholder="언젠가 할 일을 적고 Enter"><button id="sdAdd">추가</button></div>
+  <div class="add"><input type="text" id="sdNew" placeholder="언젠가 할 일을 적고 Enter"><button id="sdAdd" aria-label="추가"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button></div>
   <div id="sdList"></div>
   <div class="hint">항목을 꾹 눌러서 브레인덤프 카드로 끌어다 놓을 수 있어요.</div>
 </div>
 
 <div class="card">
   <h2 data-k="BRAIN DUMP">브레인덤프</h2>
-  <div class="cats" id="catSel"><button type="button" data-c="work">업무</button><button type="button" data-c="life">개인</button></div>
-  <div class="add"><input type="text" id="newItem" placeholder="할 일을 적고 Enter"><button id="addBtn">추가</button></div>
+  <div class="cats" id="catSel"><button type="button" data-c="work">오전</button><button type="button" data-c="life">오후</button></div>
+  <div class="add"><input type="text" id="newItem" placeholder="할 일을 적고 Enter"><button id="addBtn" aria-label="추가"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button></div>
   <div id="items"></div>
-  <div class="hint">＋로 세부 할일을 만들어요. 꾹 눌러서 시간표, 언젠가 할일, 다른 분류로 옮길 수 있어요.</div>
+  <div class="hint">＋로 세부 할일을 만들어요. 꾹 눌러서 시간표, 언젠가 할일, 오전·오후로 옮길 수 있어요.</div>
 </div>
 
 <div class="card hero">
@@ -391,8 +399,8 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
     <h2>오늘의 루틴</h2>
     <div class="rsum"><b id="rSum">0/0</b><span id="rPct"></span></div>
     <div class="bar"><i id="rbar"></i></div>
-    <div id="rlist" style="margin-top:10px"></div>
-    <div class="add"><input type="text" id="rNew" placeholder="루틴 추가 (매일 반복)"><button id="rAdd">추가</button></div>
+    <div class="add" style="margin:14px 0 10px"><input type="text" id="rNew" placeholder="루틴 추가 (매일 반복)"><button id="rAdd" aria-label="추가"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button></div>
+    <div id="rlist"></div>
   </div>
   <div class="mnav"><button id="mPrev">‹</button><b id="mLabel"></b><button id="mNext">›</button></div>
   <div id="rcards"></div>
@@ -420,7 +428,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
   </div>
 </section>
 </div>
-<div class="tip">v1102a · 디자인 개편</div>
+<div class="tip">v1102c · 오전/오후 · 루틴 실행률</div>
 </div>
 
 <script>
@@ -504,7 +512,7 @@ function bindEdit(row,s,key,getT,setT,after){
 function cyc(p){return {3:2,2:1,1:3}[p||3]}
 function orderP(a){var idx=a.map(function(_,i){return i}),key=function(i){return (a[i].c?10:0)+(a[i].p||3)};return idx.sort(function(x,y){return key(x)-key(y)||x-y})}
 function order(a){var u=[],c=[];a.forEach(function(x,i){(x.c?c:u).push(i)});return u.concat(c)}
-var CATS=[['work','업무'],['life','개인']],bdCat='work',subOpen=-1;
+var CATS=[['work','오전'],['life','오후']],bdCat='work',subOpen=-1;
 try{bdCat=localStorage.getItem('timebox:bdcat')==='life'?'life':'work'}catch(e){}
 function icat(it){return it&&it.cat==='life'?'life':'work'}
 function renderCatSel(){[].forEach.call($('catSel').children,function(b){b.className=b.dataset.c===bdCat?'on':''})}
@@ -777,6 +785,11 @@ function dayStat(d){
   return {t:act.length,d:done,p:act.length?Math.round(done/act.length*100):null};
 }
 var DN=['일','월','화','수','목','금','토'];
+function rRate(r,ym){
+  var y=+ym.slice(0,4),m=+ym.slice(5,7)-1,last=new Date(y,m+1,0).getDate(),td=today(),el=0,dn=0;
+  for(var d=1;d<=last;d++){var ds=ym+'-'+('0'+d).slice(-2);if(ds>=r.from&&ds<=td){el++;if((R.log[ds]||[]).indexOf(r.id)>-1)dn++}}
+  return{el:el,dn:dn,pct:el?Math.round(dn/el*100):null};
+}
 function renderRoutine(){
   var box=$('rlist');box.innerHTML='';
   var act=R.list.filter(function(r){return r.from<=cur}),ids=R.log[cur]||[];
@@ -791,7 +804,8 @@ function renderRoutine(){
     s.onclick=function(){var now=Date.now();if(now-lastTap<350){lastTap=0;editName(r,s)}else lastTap=now};
     var x=document.createElement('button');x.className='x';x.textContent='×';x.setAttribute('aria-label','루틴 삭제');
     x.onclick=function(){R.list=R.list.filter(function(q){return q.id!==r.id});saveR();renderRoutine()};
-    row.appendChild(c);row.appendChild(s);row.appendChild(x);box.appendChild(row);
+    var rr=rRate(r,cur.slice(0,7)),pc=document.createElement('em');pc.className='rpc';pc.textContent=rr.pct===null?'':rr.pct+'%';pc.title='이번 달 실행률';
+    row.appendChild(c);row.appendChild(s);row.appendChild(pc);row.appendChild(x);box.appendChild(row);
   });
   var st=dayStat(cur);
   $('rSum').textContent=st.d+'/'+st.t;$('rPct').textContent=st.p===null?'':st.p+'%';$('rbar').style.width=(st.p||0)+'%';
@@ -821,7 +835,8 @@ function renderCards(){
       if(ok){el++;if(on)dn++}
       cells+='<i data-d="'+ds+'" class="'+(on?'on':(ok?'':'off'))+(ds===td?' today':'')+'">'+d+'</i>';
     }
-    card.innerHTML='<div class="ttl">'+esc(r.name)+'</div><div class="cal">'+cells+'</div>';
+    var pct=el?Math.round(dn/el*100):null;
+    card.innerHTML='<div class="ttl"><span>'+esc(r.name)+'</span><small>'+(el?dn+'/'+el+'일':'')+'</small><em>'+(pct===null?'—':pct+'%')+'</em></div><div class="cal">'+cells+'</div>';
     box.appendChild(card);
   });
 }
