@@ -444,7 +444,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
   <div class="cats" id="catSel"><button type="button" data-c="work">오전</button><button type="button" data-c="life">오후</button></div>
   <div class="add"><input type="text" id="newItem" placeholder="할 일을 적고 Enter"><button id="addBtn" aria-label="추가"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button></div>
   <div id="items"></div>
-  <div class="hint">밀어서 중요도·추가·삭제 · 꾹 눌러 시간표나 오전·오후로 이동</div>
+  <div class="hint">체크 전까지 매일 이어져요 · 밀어서 중요도·추가·삭제 · 꾹 눌러 이동</div>
 </div>
 
 <div class="card hero">
@@ -497,7 +497,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
   </div>
 </section>
 </div>
-<div class="tip">v1103c · 밀어서 편집 · 간결화</div>
+<div class="tip">v1103d · 브레인덤프 이월</div>
 </div>
 
 <script>
@@ -512,13 +512,31 @@ function fitRange(d){
   ['plan','done'].forEach(function(k){Object.keys(d[k]||{}).forEach(function(x){if(d[k][x]){var n=+x;if(n<lo)lo=n;if(n+STEP>hi)hi=n+STEP}})});
   d.range={s:Math.max(0,Math.floor(lo/STEP)*STEP),e:Math.min(1440,hi)};
 }
+var BDK='timebox:bd',BD=loadBD();
+function loadBD(){
+  try{var r=localStorage.getItem(BDK);if(r){var o=JSON.parse(r);if(o&&o.items)return o}}catch(e){}
+  var all=[],seen={};
+  try{
+    var keys=[];for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(/^timebox:\d{4}-\d\d-\d\d$/.test(k))keys.push(k)}
+    keys.sort().forEach(function(k){
+      var d=JSON.parse(localStorage.getItem(k)||'{}'),day=k.slice(8);
+      (d.items||[]).forEach(function(it){
+        if(!it||!it.t)return;
+        if(it.c){it.cd=day;all.push(it)}
+        else{var sig=icat(it)+'|'+it.t;if(!seen[sig]){seen[sig]=1;all.push(it)}}
+      });
+    });
+  }catch(e){}
+  var o={items:all};try{localStorage.setItem(BDK,JSON.stringify(o))}catch(e){}return o;
+}
+function bdVis(it){return !it.c||!it.cd||it.cd===cur}
 function blank(){return {big:[{t:'',c:false},{t:'',c:false},{t:'',c:false}],items:[],plan:{},done:{},rv:{mood:0,good:'',bad:'',learn:'',tomorrow:'',diary:''}}}
 function load(day){
   try{
     var r=localStorage.getItem(KEY+day);
     if(r){
       var d=JSON.parse(r);
-      if(!d.items)d.items=[];
+      d.items=BD.items;
       if(!d.rv)d.rv={mood:0,good:'',bad:'',learn:'',tomorrow:'',diary:''};
       ['plan','done'].forEach(function(k){
         var o={};Object.keys(d[k]||{}).forEach(function(x){var n=+x;o[n<100?n*60:n]=d[k][x]});d[k]=o;
@@ -528,10 +546,10 @@ function load(day){
       return d;
     }
   }catch(e){}
-  var b=blank();b.range=defRange(day);return b;
+  var b=blank();b.items=BD.items;b.range=defRange(day);return b;
 }
 var data=load(cur);
-function save(){try{localStorage.setItem(KEY+cur,JSON.stringify(data))}catch(e){}stats()}
+function save(){try{var o=Object.assign({},data);o.items=[];localStorage.setItem(KEY+cur,JSON.stringify(o));localStorage.setItem(BDK,JSON.stringify({items:BD.items}))}catch(e){}stats()}
 function cnt(o){return Object.keys(o).filter(function(k){return o[k]}).length}
 function stats(){
   var pr=planRate(data);
@@ -634,7 +652,7 @@ function renderItems(){
   var box=$('items');box.innerHTML='';renderCatSel();openSw=null;
   var ord=orderP(data.items),focusEl=null;
   CATS.forEach(function(cg){
-    var cat=cg[0],idx=ord.filter(function(i){return icat(data.items[i])===cat});
+    var cat=cg[0],idx=ord.filter(function(i){return icat(data.items[i])===cat&&bdVis(data.items[i])});
     var g=mk('div','bdgrp');g.dataset.cat=cat;
     var h=mk('div','bdh',cg[1]);h.appendChild(mk('i','',String(idx.filter(function(i){return !data.items[i].c}).length)));
     h.setAttribute('role','button');h.setAttribute('aria-expanded',BDF[cat]?'false':'true');
@@ -646,7 +664,7 @@ function renderItems(){
       var it=data.items[i];if(!it.sub)it.sub=[];
       var row=mk('div','item'+(it.c?' done':'')+' p'+(it.p||3));row.dataset.i=i;
       var c=mk('input');c.type='checkbox';c.checked=it.c;
-      c.onchange=function(){it.c=c.checked;save();renderItems()};
+      c.onchange=function(){it.c=c.checked;if(it.c)it.cd=cur;else delete it.cd;save();renderItems()};
       var no=mk('span','no',String(n+1)),s=mk('span','tx',it.t);
       bindEdit(row,s,'bd'+i,function(){return it.t},function(v){it.t=v;save()},renderItems);
       row.appendChild(c);row.appendChild(no);row.appendChild(s);
@@ -827,7 +845,7 @@ function end(drop){
       if(a){SD.push({t:a.t,c:a.c,p:a.p||3});data.items.splice(drag.idx,1);saveSD()}
     }else{
       var b=SD[drag.idx];
-      if(b){data.items.push({t:b.t,c:b.c,p:b.p||3,cat:overEl.dataset.cat||bdCat,sub:[]});SD.splice(drag.idx,1);saveSD()}
+      if(b){data.items.push({t:b.t,c:b.c,cd:b.c?cur:undefined,p:b.p||3,cat:overEl.dataset.cat||bdCat,sub:[]});SD.splice(drag.idx,1);saveSD()}
     }
     save();
   }
@@ -1075,7 +1093,7 @@ function buildPdfRoot(){
   orderP(SD).forEach(function(i){var it=SD[i];h+=row(it.c,it.t,it.p||3)});
   h+=sec('브레인덤프');
   CATS.forEach(function(cg){
-    var idx=orderP(data.items).filter(function(i){return icat(data.items[i])===cg[0]});
+    var idx=orderP(data.items).filter(function(i){return icat(data.items[i])===cg[0]&&bdVis(data.items[i])});
     h+=sub(cg[1],idx.length);
     if(!idx.length)h+='<div class="blk" style="color:#b3bac3;padding:8px 0">—</div>';
     idx.forEach(function(i,n){
