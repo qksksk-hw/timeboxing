@@ -412,6 +412,56 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .rate{flex-direction:row-reverse;justify-content:space-between;align-items:center;margin:14px 0 6px;padding:16px 18px;border-radius:18px;background:var(--bg)}
 .rate b{font-size:30px}
 .rate span{font-size:13px;font-weight:600;color:var(--ink)}
+
+/* ===== v1104a: 카드형 새 구성 ===== */
+:root{--canvas:#f1f3f6;--page:#fff;--bg:#f2f4f7;--line:#eceff3}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--canvas:#090c10;--page:#141a20;--bg:#1d252d;--line:#232c35;--plan:#242b47;--done:#16403a}}
+:root[data-theme="dark"]{--canvas:#090c10;--page:#141a20;--bg:#1d252d;--line:#232c35;--plan:#242b47;--done:#16403a}
+body{background:var(--canvas)}
+.wrap{padding:16px 14px 150px}
+header{margin:6px 4px 18px}
+.date{background:var(--page);box-shadow:0 1px 2px rgba(15,23,32,.06)}
+.dpick{background:var(--bg);box-shadow:none}
+.wd{font-size:28px}
+/* 카드 */
+.card,.card.hero{background:var(--page);border:0;border-radius:26px;padding:20px 18px 18px;margin-bottom:12px;box-shadow:0 1px 2px rgba(15,23,32,.04)}
+.card h2{font-size:16px;font-weight:700;margin:0 0 12px}
+.card.over{background:color-mix(in srgb,var(--accent) 10%,var(--page))}
+.card.focus{background:color-mix(in srgb,var(--accent) 9%,var(--page))}
+.card.focus .swr{border-bottom-color:color-mix(in srgb,var(--accent) 16%,transparent)}
+.card.focus .swr>.big{background:color-mix(in srgb,var(--accent) 9%,var(--page))}
+.card.focus .big input[type=text]{font-size:17px;font-weight:600}
+.card.focus .big .n{border-color:color-mix(in srgb,var(--accent) 55%,transparent);color:var(--accent);background:var(--page)}
+.card.focus .big.done .n{background:var(--accent);border-color:var(--accent)}
+/* 입력: 목록의 첫 줄처럼 */
+.add{align-items:center;gap:10px;margin:0 0 6px;padding:0 0 10px;border-bottom:1px solid var(--line)}
+.add input{background:transparent;border-radius:0;padding:8px 0;font-size:15px}
+.add input::placeholder{color:var(--sub)}
+.add input{flex:1 1 0;width:0;min-width:0}
+.add button{order:-1;width:30px;height:30px;border-radius:50%;background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--accent)}
+.add button svg{width:16px;height:16px}
+.add .cats{order:1;flex:none;margin:0;padding:3px;gap:0;border-radius:999px;background:var(--bg)}
+.add .cats button{order:0;width:auto;height:auto;flex:none;padding:6px 12px;border-radius:999px;font-size:12px;font-weight:600;background:transparent;color:var(--sub)}
+.add .cats button.on{background:var(--pri);color:var(--onpri)}
+.add .cats button svg{display:none}
+/* 목록 */
+.bdh{font-size:13px;font-weight:700;margin:14px 0 0;padding:10px 0 6px}
+.bdh i{font-size:12px}
+.hint{font-size:11.5px;color:var(--sub);opacity:.85;margin-top:10px}
+.swr>.item,.swr>.sditem{padding:12px 0}
+.bdgrp.closed{background:var(--bg)}
+/* 시간표 */
+.card.hero .gscroll{background:var(--bg);border-radius:20px}
+.rate{background:var(--bg)}
+.pdfbtn{background:var(--page);color:var(--sub);font-weight:600;box-shadow:0 1px 2px rgba(15,23,32,.04)}
+/* 루틴 */
+.rcard{background:var(--page);box-shadow:0 1px 2px rgba(15,23,32,.04);border-radius:26px}
+.cal i{background:var(--bg)}
+.cal i.blank{background:transparent}
+.rcard .ttl em{background:var(--bg)}
+.mnav button{background:var(--page)}
+/* 탭바 */
+.tabs{box-shadow:0 10px 30px rgba(15,23,32,.14),0 0 0 1px var(--line)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -427,22 +477,21 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 <div class="tabs"><button class="tab on">계획</button><button class="tab">루틴</button></div>
 <div class="swipe" id="swipe"><section class="pane" id="pane1">
 
-<div class="card">
+<div class="card focus">
   <h2 data-nf="1">오늘의 빅3</h2>
   <div id="bigs"></div>
 </div>
 
 <div class="card">
   <h2>언젠가 할일</h2>
-  <div class="add"><input type="text" id="sdNew" placeholder="언젠가 할 일을 적고 Enter"><button id="sdAdd" aria-label="추가"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button></div>
+  <div class="add"><input type="text" id="sdNew" placeholder="언젠가 할 일 추가"><button id="sdAdd" aria-label="추가"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button></div>
   <div id="sdList"></div>
   <div class="hint">밀어서 중요도·삭제 · 꾹 눌러 브레인덤프로 이동</div>
 </div>
 
 <div class="card">
   <h2 data-k="BRAIN DUMP">브레인덤프</h2>
-  <div class="cats" id="catSel"><button type="button" data-c="work">오전</button><button type="button" data-c="life">오후</button></div>
-  <div class="add"><input type="text" id="newItem" placeholder="할 일을 적고 Enter"><button id="addBtn" aria-label="추가"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button></div>
+  <div class="add"><input type="text" id="newItem" placeholder="할 일 추가"><div class="cats" id="catSel"><button type="button" data-c="work">오전</button><button type="button" data-c="life">오후</button></div><button id="addBtn" aria-label="추가"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button></div>
   <div id="items"></div>
   <div class="hint">적은 날부터 체크 전까지 이어져요 · 밀어서 중요도·추가·삭제 · 꾹 눌러 이동</div>
 </div>
@@ -497,7 +546,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
   </div>
 </section>
 </div>
-<div class="tip">v1103e · 브레인덤프 이월</div>
+<div class="tip">v1104a · 카드형 새 구성</div>
 </div>
 
 <script>
