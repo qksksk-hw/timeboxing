@@ -462,6 +462,31 @@ header{margin:6px 4px 18px}
 .mnav button{background:var(--page)}
 /* 탭바 */
 .tabs{box-shadow:0 10px 30px rgba(15,23,32,.14),0 0 0 1px var(--line)}
+
+/* v1104b 검색 */
+.card{position:relative}
+.sbtn{position:absolute;top:15px;right:46px;width:36px;height:36px;border:0;border-radius:50%;background:transparent;color:var(--sub);display:grid;place-items:center;padding:0}
+.sbtn.on{background:var(--bg);color:var(--ink)}
+.card.closed .sbtn{display:none}
+.sbox{display:flex;align-items:center;gap:8px;margin:0 0 10px;padding:0 6px 0 14px;border-radius:14px;background:var(--bg);color:var(--sub)}
+.sbox[hidden],#bdRes[hidden]{display:none}
+.sbox svg{flex:none}
+.sbox input::-webkit-search-cancel-button,.sbox input::-webkit-search-decoration{-webkit-appearance:none;appearance:none;display:none}
+.sbox input{flex:1 1 0;width:0;min-width:0;border:0;outline:0;background:transparent;color:var(--ink);font:inherit;font-size:15px;padding:13px 0}
+.sbox small{flex:none;font-size:12px;font-weight:600}
+.sbox button{flex:none;width:32px;height:32px;border:0;background:transparent;color:var(--sub);font-size:20px;line-height:1}
+.card.sq .add,.card.sq .hint,.card.sq #items{display:none}
+.sr{padding:12px 0;border-bottom:1px solid var(--line)}
+.sr:last-child{border-bottom:0}
+.sr .st{font-size:15px;font-weight:500}
+.sr.dn .st{color:var(--sub);text-decoration:line-through}
+.sr .ss{margin:6px 0 0 6px;font-size:13px;color:var(--sub)}
+.sr .mt{margin-top:4px;font-size:11.5px;color:var(--sub)}
+.sr mark{background:color-mix(in srgb,var(--accent) 24%,transparent);color:inherit;border-radius:4px;padding:0 1px}
+
+/* v1104c */
+.sbtn{right:14px}
+.card.closed>*:not(h2){display:none}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -483,14 +508,10 @@ header{margin:6px 4px 18px}
 </div>
 
 <div class="card">
-  <h2>언젠가 할일</h2>
-  <div class="add"><input type="text" id="sdNew" placeholder="언젠가 할 일 추가"><button id="sdAdd" aria-label="추가"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button></div>
-  <div id="sdList"></div>
-  <div class="hint">밀어서 중요도·삭제 · 꾹 눌러 브레인덤프로 이동</div>
-</div>
-
-<div class="card">
-  <h2 data-k="BRAIN DUMP">브레인덤프</h2>
+  <h2 data-nf="1">브레인덤프</h2>
+  <button class="sbtn" id="bdSBtn" type="button" aria-label="브레인덤프 검색"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg></button>
+  <div class="sbox" id="bdSBox" hidden><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg><input type="search" id="bdQ" placeholder="내가 적은 할 일 검색" autocomplete="off" enterkeyhint="search"><small id="bdCnt"></small><button type="button" id="bdQx" aria-label="검색 닫기">×</button></div>
+  <div id="bdRes" hidden></div>
   <div class="add"><input type="text" id="newItem" placeholder="할 일 추가"><div class="cats" id="catSel"><button type="button" data-c="work">오전</button><button type="button" data-c="life">오후</button></div><button id="addBtn" aria-label="추가"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button></div>
   <div id="items"></div>
   <div class="hint">적은 날부터 체크 전까지 이어져요 · 밀어서 중요도·추가·삭제 · 꾹 눌러 이동</div>
@@ -508,6 +529,13 @@ header{margin:6px 4px 18px}
   <div class="rmsg" id="rngMsg"></div>
   <div class="rate"><b id="sRate">0%</b><span id="sRateSub">계획대로 실행</span></div>
   <div class="tip">칸을 눌러 적어요 · 가운데 버튼은 계획을 실행에 복사 · 계획 칸은 꾹 눌러 이동</div>
+</div>
+
+<div class="card">
+  <h2>언젠가 할일</h2>
+  <div class="add"><input type="text" id="sdNew" placeholder="언젠가 할 일 추가"><button id="sdAdd" aria-label="추가"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button></div>
+  <div id="sdList"></div>
+  <div class="hint">밀어서 중요도·삭제 · 꾹 눌러 브레인덤프로 이동</div>
 </div>
 
 <button id="pdfBtn" class="pdfbtn">PDF로 저장</button>
@@ -546,7 +574,7 @@ header{margin:6px 4px 18px}
   </div>
 </section>
 </div>
-<div class="tip">v1104a · 카드형 새 구성</div>
+<div class="tip">v1104c · 순서 정리</div>
 </div>
 
 <script>
@@ -696,6 +724,48 @@ try{bdCat=localStorage.getItem('timebox:bdcat')==='life'?'life':'work'}catch(e){
 function icat(it){return it&&it.cat==='life'?'life':'work'}
 function renderCatSel(){[].forEach.call($('catSel').children,function(b){b.className=b.dataset.c===bdCat?'on':''})}
 [].forEach.call($('catSel').children,function(b){b.onclick=function(){bdCat=b.dataset.c;try{localStorage.setItem('timebox:bdcat',bdCat)}catch(e){}renderCatSel()}});
+
+/* 브레인덤프 검색 */
+function bdMD(d){return d?(+d.slice(5,7))+'/'+(+d.slice(8,10)):''}
+function bdHL(el,txt,q){
+  var i=txt.toLowerCase().indexOf(q);
+  if(i<0){el.textContent=txt;return}
+  el.appendChild(document.createTextNode(txt.slice(0,i)));
+  var m=document.createElement('mark');m.textContent=txt.slice(i,i+q.length);el.appendChild(m);
+  el.appendChild(document.createTextNode(txt.slice(i+q.length)));
+}
+function bdSearch(){
+  var q=($('bdQ').value||'').trim().toLowerCase(),card=$('items').closest('.card'),res=$('bdRes');
+  var on=!$('bdSBox').hidden&&q.length>0;
+  card.classList.toggle('sq',on);res.hidden=!on;res.innerHTML='';$('bdCnt').textContent='';
+  if(!on)return;
+  var hits=[];
+  data.items.forEach(function(it){
+    var self=it.t.toLowerCase().indexOf(q)>-1,subs=(it.sub||[]).filter(function(sb){return sb.t.toLowerCase().indexOf(q)>-1});
+    if(self||subs.length)hits.push({it:it,self:self,subs:subs});
+  });
+  hits.sort(function(a,b){return (a.it.c?1:0)-(b.it.c?1:0)||String(b.it.from||'').localeCompare(String(a.it.from||''))});
+  $('bdCnt').textContent=hits.length+'건';
+  if(!hits.length){res.appendChild(mk('div','empty','검색 결과가 없어요'));return}
+  hits.forEach(function(h){
+    var it=h.it,r=mk('div','sr'+(it.c?' dn':'')),t=mk('div','st');bdHL(t,it.t,q);r.appendChild(t);
+    h.subs.forEach(function(sb){var l=mk('div','ss');l.appendChild(document.createTextNode('└ '));bdHL(l,sb.t,q);r.appendChild(l)});
+    var meta=[icat(it)==='life'?'오후':'오전'];
+    if(it.from)meta.push(bdMD(it.from)+' 작성');
+    meta.push(it.c?('완료'+(it.cd?' '+bdMD(it.cd):'')):'진행 중');
+    r.appendChild(mk('div','mt',meta.join(' · ')));
+    res.appendChild(r);
+  });
+}
+function bdSOpen(open){
+  $('bdSBox').hidden=!open;$('bdSBtn').classList.toggle('on',open);
+  if(open)$('bdQ').focus();else $('bdQ').value='';
+  bdSearch();
+}
+$('bdSBtn').onclick=function(e){e.stopPropagation();bdSOpen($('bdSBox').hidden)};
+$('bdQx').onclick=function(){bdSOpen(false)};
+$('bdQ').oninput=bdSearch;
+$('bdQ').onkeydown=function(e){if(e.key==='Escape')bdSOpen(false)};
 function mk(tag,cls,txt){var e=document.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e}
 function renderItems(){
   var box=$('items');box.innerHTML='';renderCatSel();openSw=null;
@@ -1063,7 +1133,7 @@ function editName(r,span){
 var FK='timebox:fold',FOLD={};
 try{FOLD=JSON.parse(localStorage.getItem(FK)||'{}')}catch(e){}
 [].forEach.call(document.querySelectorAll('#pane1 .card'),function(card){
-  var h=card.querySelector('h2');if(!h||h.dataset.nf||card.querySelector('#grid'))return;
+  var h=card.querySelector('h2');if(!h||h.dataset.nf)return;
   var id=h.dataset.k||h.textContent.trim();
   h.classList.add('fold');
   if(FOLD[id])card.classList.add('closed');
